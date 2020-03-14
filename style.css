@@ -1,0 +1,28 @@
+/* div {
+    border: solid 1px red
+} */
+
+.container-fluid {
+    border-bottom: solid 5px black;
+}
+
+label {
+    font-size: 150%;
+}
+
+input {
+   
+    background-color: rgb(207, 208, 223);
+}
+
+.border-grey {
+    border: solid 1px #6c757d;
+}
+
+.searched-row {
+    padding-left: 20px;
+    padding-top: 15px;
+    background-color:#6c757d;
+   
+}
+
