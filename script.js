@@ -44,14 +44,40 @@ $(document).ready(function() {
         $.ajax({
             url: baseURL + 'weather?q=' + input + units + apiKey,
             method: 'GET'
-          }).then(function(response) {
+        }).done(function(response) {
+            let searchedC = JSON.parse(localStorage.getItem('searchedCities'))
+            if (searchedC == null) {
+                searchedC = []
+            }
+            searchedC.unshift(input)
+            localStorage.setItem('searchedCities', JSON.stringify(searchedC))
             renderWeather(response)
-            //console.log(response);
-          });
+            console.log(response)
+        }).fail(function(xhr, status, error) {
+            //Ajax request failed.
+            let errorMessage = `${xhr.status} : ${xhr.statusText}`
+            alert(`Error -  ${errorMessage}`);
+        })
+
+        // $.ajax({
+        //     url: baseURL + 'forecast?q=' + input + units + apiKey,
+        //     method: 'GET'
+        // }).done(function(response) {
+            // let searchedF = JSON.parse(localstorage.getItem('searchedForecast'))
+            // if (searchedF == null || searchedF == undefined) {
+            //     searchedF = {}
+            // }
+            // $.extend(searchedF, response)
+            // localStorage.setItem('searchedForecast', JSON.stringify(searchedF))
+            //console.log (response)
+            // console.log(searchedF)
+        // }).fail(function() {
+        //     console.log(`failed`)
+        //})
     };
 
     $('#search-btn').on('click', function() {
-        let searchInput = $('#city-search').val();
+        let searchInput = $('#city-search').val().trim();
         // Formats search inputs so that each word has proper case. Found @ https://stackoverflow.com/questions/4878756/how-to-capitalize-first-letter-of-each-word-like-a-2-word-city
         searchInput = searchInput.toLowerCase()
         .split(' ')
@@ -59,22 +85,12 @@ $(document).ready(function() {
         .join(' ');
 
         getAPIData(searchInput);
-          
-        let searched = JSON.parse(localStorage.getItem('searchedCities'))
-        if (searched == null) {
-            searched = []
-        }
-        searched.unshift(searchInput)
-        localStorage.setItem('searchedCities', JSON.stringify(searched))
-        //console.log(searched)
-        
     });
 
     $('.searched-row').on('click', function(event) {
         event.stopPropagation()
         getAPIData($(this).text().trim())
     });
-
 
 
 // End of script    
