@@ -7,6 +7,8 @@ $(document).ready(function() {
 
     const currentDay = moment().format("dddd, Do, h:mm A");
 
+    let uvi
+
     // Gets previously searched cities from local storage and renders them to the page. Only displays unique searches
     function renderSearchedCities () {
         let unique = new Set(JSON.parse(localStorage.getItem('searchedCities')))
@@ -34,15 +36,39 @@ $(document).ready(function() {
             <p>Temperature: ${weatherData.main.temp} \xB0F</p>
             <p>Humidity: ${weatherData.main.humidity}%</p>
             <p>Wind Speed: ${weatherData.wind.speed} MPH</p>
-            <p>UV Index:</p>
         `
         $('#weather-display').html(displayBlock).addClass('border-grey')
        
-    };   
+    };
 
-    function getAPIData (input) {
+    function setUVClass(uvi) {
+        if (uvi < 3) {
+            return 'low'
+        }
+        else if (uvi < 6) {
+            return 'moderate'
+        }
+        else if (uvi < 8) {
+            return 'high'
+        }
+        else if (uvi < 11) {
+            return 'very-high'
+        }
+        else {
+            return 'extreme'
+        }
+    }
+    
+    function renderUVI(weatherData) {
+        let uvIndex = `<p>UV Index: <span class="${setUVClass(weatherData.value)} rounded">${weatherData.value}</span></p>`
+        $('#weather-display').append(uvIndex)
+        console.log(uvIndex)
+    }
+    
+    // Queries api for weather data using input value. Adds input value to local storage.
+    function getWeatherData (input) {
         $.ajax({
-            url: baseURL + 'weather?q=' + input + units + apiKey,
+            url: `${baseURL}weather?q=${input + units + apiKey}`,
             method: 'GET'
         }).done(function(response) {
             let searchedC = JSON.parse(localStorage.getItem('searchedCities'))
@@ -51,8 +77,16 @@ $(document).ready(function() {
             }
             searchedC.unshift(input)
             localStorage.setItem('searchedCities', JSON.stringify(searchedC))
+
             renderWeather(response)
-            console.log(response)
+            // Uses location data from first ajax response to get UV index for that location. Calls renderUVI function.
+            $.ajax({
+                url: `${baseURL}uvi?${apiKey + units}&lat=${response.coord.lat}&lon=${response.coord.lon}`,
+                method: 'GET'
+            }).then(function(res) {
+                renderUVI(res)
+            })
+
         }).fail(function(xhr, status, error) {
             //Ajax request failed.
             let errorMessage = `${xhr.status} : ${xhr.statusText}`
@@ -76,6 +110,7 @@ $(document).ready(function() {
         //})
     };
 
+
     $('#search-btn').on('click', function() {
         let searchInput = $('#city-search').val().trim();
         // Formats search inputs so that each word has proper case. Found @ https://stackoverflow.com/questions/4878756/how-to-capitalize-first-letter-of-each-word-like-a-2-word-city
@@ -84,15 +119,15 @@ $(document).ready(function() {
         .map((s) => s.charAt(0).toUpperCase() + s.substring(1))
         .join(' ');
 
-        getAPIData(searchInput);
+        getWeatherData(searchInput);
     });
 
     $('.searched-row').on('click', function(event) {
         event.stopPropagation()
-        getAPIData($(this).text().trim())
+        getWeatherData($(this).text().trim())
     });
 
-
+    
 // End of script    
 });
 
