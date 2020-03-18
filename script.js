@@ -1,15 +1,14 @@
 $(document).ready(function() {
 
     // Variables
-    const baseURL = 'https://api.openweathermap.org/data/2.5/';
-    const apiKey = '&APPID=3f0192e4f37df4bc3e14bbbadfa0d0f3';
+    const baseURL = 'https://api.openweathermap.org/data/2.5/'
+    const apiKey = '&APPID=3f0192e4f37df4bc3e14bbbadfa0d0f3'
     const units = '&units=imperial'
 
-    const currentDay = moment().format("dddd, Do, h:mm A");
+    const currentDay = moment().format("dddd, Do, h:mm A")
+    
 
-    let uvi
-
-    // Gets previously searched cities from local storage and renders them to the page. Only displays unique searches
+    // Gets previously searched cities from local storage and renders them to the page. Only displays unique searches.
     function renderSearchedCities () {
         let unique = new Set(JSON.parse(localStorage.getItem('searchedCities')))
         let searchedUnique = [...unique]
@@ -18,18 +17,18 @@ $(document).ready(function() {
 
             if (searchedUnique[i] !== undefined) {
                 let searchedRow = `
-                <div class="row rounded mb-1 btn-secondary searched-row">
+                <div class="row rounded btn-secondary searched-row">
                 <p>${searchedUnique[i]}</p>
                 </div>
                 `
                 $('#search-col').append(searchedRow)
             }
         }
-    };
+    }
 
     renderSearchedCities();
 
-    // renderWeather
+    // Renders weather data based on API call response.
     function renderWeather(weatherData) {
         let displayBlock = `
             <h3>${weatherData.name} (${currentDay}) <img src="http://openweathermap.org/img/wn/${weatherData.weather[0].icon}.png"></h3>
@@ -39,8 +38,9 @@ $(document).ready(function() {
         `
         $('#weather-display').html(displayBlock).addClass('border-grey')
        
-    };
+    }
 
+    // Sets level class for UV index (low-extreme).
     function setUVClass(uvi) {
         if (uvi < 3) {
             return 'low'
@@ -58,19 +58,32 @@ $(document).ready(function() {
             return 'extreme'
         }
     }
-    
-    function renderUVI(weatherData) {
-        let uvIndex = `<p>UV Index: <span class="${setUVClass(weatherData.value)} rounded">${weatherData.value}</span></p>`
+
+    // Renders UVI data. gets level class by calling setUVClass().
+    function renderUVI(UVData) {
+        let uvIndex = `<p>UV Index: <span class="${setUVClass(UVData.value)} rounded">${UVData.value}</span></p>`
         $('#weather-display').append(uvIndex)
-        console.log(uvIndex)
+    }
+
+    // Renders 5 day forecast data. 
+    function renderForecast(forecastData) {
+        $('.forecast-title').show()
+        let forecastBlock = `
+            <div class="col rounded m-1 border-grey">
+                <h6>${forecastData.dt_txt.substring(5, 10)} <img src="http://openweathermap.org/img/wn/${forecastData.weather[0].icon}.png"></h6>
+                <p>Temp: ${forecastData.main.temp} \xB0F</p>
+                <p>Humidity ${forecastData.main.humidity}%</p>
+            </div>    
+        `
+        $('#forecast-display').append(forecastBlock)
     }
     
-    // Queries api for weather data using input value. Adds input value to local storage.
+    // Queries api for weather/UVI/forecast data using input value. Adds input value to local storage.
     function getWeatherData (input) {
         $.ajax({
             url: `${baseURL}weather?q=${input + units + apiKey}`,
             method: 'GET'
-        }).done(function(response) {
+        }).done(function(weatherResponse) {
             let searchedC = JSON.parse(localStorage.getItem('searchedCities'))
             if (searchedC == null) {
                 searchedC = []
@@ -78,50 +91,47 @@ $(document).ready(function() {
             searchedC.unshift(input)
             localStorage.setItem('searchedCities', JSON.stringify(searchedC))
 
-            renderWeather(response)
-            // Uses location data from first ajax response to get UV index for that location. Calls renderUVI function.
+            renderWeather(weatherResponse)
+
+            // Uses location data from first ajax Response to get UV index for that location. Calls renderUVI.
             $.ajax({
-                url: `${baseURL}uvi?${apiKey + units}&lat=${response.coord.lat}&lon=${response.coord.lon}`,
+                url: `${baseURL}uvi?${apiKey + units}&lat=${weatherResponse.coord.lat}&lon=${weatherResponse.coord.lon}`,
                 method: 'GET'
-            }).then(function(res) {
-                renderUVI(res)
+            }).then(function(UVIResponse) {
+                renderUVI(UVIResponse)
+            })
+            // Uses location data from first ajax Response to get 5 day forecast for that location. Calls renderForecast() for each day.
+            $.ajax({
+                url: baseURL + 'forecast?q=' + input + units + apiKey,
+                method: 'GET'
+            }).then(function(forecastResponse) {
+                $('#forecast-display').empty()
+                
+                for (let i = 0; i < forecastResponse.list.length; i += 8) {
+                    renderForecast(forecastResponse.list[i])
+                }
             })
 
+        // Ajax request failed.
         }).fail(function(xhr, status, error) {
-            //Ajax request failed.
             let errorMessage = `${xhr.status} : ${xhr.statusText}`
-            alert(`Error -  ${errorMessage}`);
+            alert(`Error -  ${errorMessage}`)
         })
+    }
 
-        // $.ajax({
-        //     url: baseURL + 'forecast?q=' + input + units + apiKey,
-        //     method: 'GET'
-        // }).done(function(response) {
-            // let searchedF = JSON.parse(localstorage.getItem('searchedForecast'))
-            // if (searchedF == null || searchedF == undefined) {
-            //     searchedF = {}
-            // }
-            // $.extend(searchedF, response)
-            // localStorage.setItem('searchedForecast', JSON.stringify(searchedF))
-            //console.log (response)
-            // console.log(searchedF)
-        // }).fail(function() {
-        //     console.log(`failed`)
-        //})
-    };
-
-
+    // On search button click, calls getWeatherData() using search input field value.
     $('#search-btn').on('click', function() {
-        let searchInput = $('#city-search').val().trim();
+        let searchInput = $('#city-search').val().trim()
         // Formats search inputs so that each word has proper case. Found @ https://stackoverflow.com/questions/4878756/how-to-capitalize-first-letter-of-each-word-like-a-2-word-city
         searchInput = searchInput.toLowerCase()
         .split(' ')
         .map((s) => s.charAt(0).toUpperCase() + s.substring(1))
-        .join(' ');
+        .join(' ')
 
         getWeatherData(searchInput);
     });
 
+    // Calls getWeatherData() on clicking a location search history element, using that location.
     $('.searched-row').on('click', function(event) {
         event.stopPropagation()
         getWeatherData($(this).text().trim())
@@ -130,10 +140,3 @@ $(document).ready(function() {
     
 // End of script    
 });
-
-// let options = {
-//     APPID: '3f0192e4f37df4bc3e14bbbadfa0d0f3'
-// }
-// `${baseURL}/data/2.5/weather?q${$('#city-search').val()}${$.param(options)}`
-
-{/* <p>${searchedUnique[i][0].toUpperCase() + searchedUnique[i].substring(1).toLowerCase()}</p> */}

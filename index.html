@@ -18,18 +18,24 @@
       <h1 class="text-center">Weather Dashboard</h1>
     </div>
     <div class="container">
-      <div class="row">
-        <div class="col-4 mr-4" id="search-col">
-          <div class="row">
-              <label for="city-search">Enter a Location</label>
-          </div>
-          <div class="row mb-3">
+        <div class="row">
+          <div class="col-4 mr-4" id="search-col">
+            <div class="row">
+              <label for="city-search">Search for a City</label>
+            </div>
+            <div class="row mb-3">
               <input class="form-control-inline rounded mr-1" type="text" placeholder="" id="city-search">
               <button type="button" class="btn btn-secondary" id="search-btn">Search</button>
+            </div>
           </div>
-        </div>
-        <div class="col rounded" id="weather-display">
+          <div class="col">
+          <div class="col rounded mb-5" id="weather-display">
           <!-- weather data goes here -->
+          </div>
+          <h4 class="forecast-title">5-Day Forecast:</h4>
+          <div class="row" id="forecast-display">
+              <!-- Forecast goes here -->
+          </div>
         </div>
       </div>
     </div>
