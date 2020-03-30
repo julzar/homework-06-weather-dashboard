@@ -17,3 +17,5 @@ Unique searches means that regardless of how many times a location is searched, 
 (and it will only count as one search for the purpose of determining the most recent eight, though it will move to the top of the list).
 
 If the user clicks one of these buttons, the weather/forecast for that location is displayed.
+
+https://julzar.github.io/homework-06-weather-dashboard/
